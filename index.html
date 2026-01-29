@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>High Poker Caja</title>
+<style>
+  body{font-family: system-ui, -apple-system; margin:0; background:#0b0d10; color:#e9eef5;}
+  header{padding:14px 16px; position:sticky; top:0; background:#0b0d10; border-bottom:1px solid #1a2230;}
+  h1{font-size:18px; margin:0 0 8px 0;}
+  .wrap{padding:14px 16px; max-width:980px; margin:0 auto;}
+  .card{background:#111826; border:1px solid #1a2230; border-radius:16px; padding:12px; margin:12px 0;}
+  .row{display:flex; gap:10px; flex-wrap:wrap;}
+  label{font-size:12px; opacity:.85;}
+  input, select, button{
+    font-size:16px; padding:10px 12px; border-radius:12px; border:1px solid #263247;
+    background:#0f1522; color:#e9eef5;
+  }
+  input{width:140px;}
+  .btn{background:#1b2840; border-color:#2b3a55;}
+  .btnPrimary{background:#2a66ff; border-color:#2a66ff;}
+  .btnDanger{background:#3a1b22; border-color:#5a2b35;}
+  .btnGhost{background:#0f1522; border-color:#263247; opacity:.95;}
+  .pill{padding:8px 10px; border-radius:999px; border:1px solid #263247; background:#0f1522; font-size:13px;}
+  table{width:100%; border-collapse:collapse;}
+  th,td{padding:10px 8px; border-bottom:1px solid #1a2230; text-align:left; vertical-align:middle;}
+  th{font-size:12px; opacity:.85;}
+  .name{min-width:150px;}
+  .small{font-size:12px; opacity:.75;}
+  .totals{display:flex; gap:10px; flex-wrap:wrap;}
+  .actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .counter{font-variant-numeric: tabular-nums;}
+
+  /* Floating top-right controls */
+  .topRightControls{
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 10px);
+    right: calc(env(safe-area-inset-right) + 10px);
+    display:flex;
+    gap:8px;
+    z-index: 9999;
+  }
+  .btnMini{
+    font-size:13px;
+    padding:8px 10px;
+    border-radius:999px;
+    line-height:1;
+  }
+
+  /* Light mode (modo día) */
+  body.light{ background:#f5f7fb; color:#0b1220; }
+  body.light header{ background:#f5f7fb; border-bottom:1px solid #d7e0ef; }
+  body.light .card{ background:#ffffff; border-color:#d7e0ef; }
+  body.light input, body.light select, body.light button{
+    background:#ffffff; color:#0b1220; border-color:#c7d3e6;
+  }
+  body.light .btn{ background:#eef2fb; border-color:#c7d3e6; }
+  body.light .btnGhost{ background:#ffffff; border-color:#c7d3e6; }
+  body.light .btnDanger{ background:#ffecef; border-color:#f3b7c1; }
+  body.light .pill{ background:#ffffff; border-color:#c7d3e6; }
+  body.light th, body.light td{ border-bottom:1px solid #e3eaf6; }
+
+
+  /* Color roles for buttons */
+  .btnMoney{ background:#1f7a4a; border-color:#2da66a; }
+  .btnMoney:hover{ background:#239a5f; }
+  .btnRemove{ background:#7a1f28; border-color:#b33a47; }
+  .btnRemove:hover{ background:#9a2632; }
+
+  /* Special style for Add-on+ (still money, but visually distinct) */
+  .btnAddonPlus{ background:#1f7a4a; border:2px dashed #9be7c4; }
+  .btnAddonPlus:hover{ background:#239a5f; }
+
+  /* Small focus ring for keyboard/safari accessibility */
+  button:focus{ outline:2px solid rgba(255,255,255,.25); outline-offset:2px; }
+  body.light button:focus{ outline:2px solid rgba(15,30,60,.25); }
+
+
+  /* === Light mode button adjustments === */
+  body.light .btnMoney{
+    background:#e6f4ec;
+    color:#1f7a4a;
+    border-color:#2da66a;
+  }
+  body.light .btnMoney:hover{
+    background:#d7efe3;
+  }
+
+  body.light .btnAddonPlus{
+    background:#e6f4ec;
+    color:#1f7a4a;
+    border:2px dashed #1f7a4a;
+  }
+  body.light .btnAddonPlus:hover{
+    background:#d7efe3;
+  }
+
+  body.light .btnRemove{
+    background:#fdecef;
+    color:#7a1f28;
+    border-color:#d48a93;
+  }
+  body.light .btnRemove:hover{
+    background:#f9d9de;
+  }
+
+
+  /* Visual grouping: separate Premio vs Debe columns (safe, no logic changes) */
+  table thead th:nth-child(7),
+  table tbody td:nth-child(7){
+    border-left: 2px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.03);
+  }
+  table thead th:nth-child(8),
+  table tbody td:nth-child(8){
+    background: rgba(255,255,255,.01);
+  }
+
+  /* Light mode: keep separation visible on white */
+  body.light table thead th:nth-child(7),
+  body.light table tbody td:nth-child(7){
+    border-left: 2px solid rgba(15,30,60,.12);
+    background: rgba(15,30,60,.04);
+  }
+  body.light table thead th:nth-child(8),
+  body.light table tbody td:nth-child(8){
+    background: rgba(15,30,60,.02);
+  }
+
+
+  /* Strong semantic contrast: Premio (green) vs Debe (red) */
+  /* Dark mode */
+  table thead th:nth-child(7),
+  table tbody td:nth-child(7){
+    background: rgba(31, 122, 74, 0.25); /* Premio Mystery */
+  }
+  table thead th:nth-child(8),
+  table tbody td:nth-child(8){
+    background: rgba(122, 31, 40, 0.25); /* Debe */
+  }
+
+  /* Light mode */
+  body.light table thead th:nth-child(7),
+  body.light table tbody td:nth-child(7){
+    background: rgba(45, 166, 106, 0.15);
+  }
+  body.light table thead th:nth-child(8),
+  body.light table tbody td:nth-child(8){
+    background: rgba(211, 47, 47, 0.12);
+  }
+
+
+  /* Simple toast */
+  .toast{
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(env(safe-area-inset-bottom) + 16px);
+    padding: 10px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    z-index: 9999;
+    background: rgba(0,0,0,.65);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.12);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease;
+  }
+  .toast.show{ opacity: 1; }
+  body.light .toast{
+    background: rgba(15,30,60,.85);
+    border: 1px solid rgba(255,255,255,.18);
+  }
+
+</style>
+</head>
+<body>
+
+<div class="topRightControls">
+  <button class="btn btnRemove btnMini" id="newTournament">Nuevo torneo</button>
+  <button class="btn btnMini" id="toggleTheme">Modo día</button>
+  <button class="btn btnMoney btnMini" id="saveStateBtn">Guardar</button>
+</div>
+
+<header>
+  <h1>High Poker — Caja Torneo</h1>
+  <div class="totals" id="topTotals"></div>
+</header>
+
+<div class="wrap">
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Buy-in (CLP)</label><br>
+        <input id="buyIn" type="number" value="50000" min="0">
+      </div>
+      <div>
+        <label>Rebuy (CLP)</label><br>
+        <input id="rebuy" type="number" value="10000" min="0">
+      </div>
+      <div>
+        <label>Add-on (CLP)</label><br>
+        <input id="addon" type="number" value="30000" min="0">
+        <div class="small">Add-on Plus (50%): <b id="addonPlusLabel">$0</b></div>
+      </div>
+      <div>
+        <label>Sobres Mystery</label><br>
+        <select id="envCount">
+          <option>9</option><option>8</option><option>7</option><option>6</option><option>5</option>
+        </select>
+      </div>
+      <div>
+        <label>Premios (%)</label><br>
+        <div class="row" style="gap:6px; flex-wrap:nowrap;">
+          <input id="p1" type="number" value="50" min="0" max="100" style="width:80px" inputmode="numeric">
+          <input id="p2" type="number" value="30" min="0" max="100" style="width:80px" inputmode="numeric">
+          <input id="p3" type="number" value="20" min="0" max="100" style="width:80px; opacity:.8" inputmode="numeric" disabled>
+        </div>
+        <div class="small">1°, 2° editables. 3° se ajusta para sumar 100.</div>
+      </div>
+      <div>
+        <label>&nbsp;</label><br>
+        <button class="btn" id="recalc">Recalcular</button>
+      </div>
+    </div>
+    <div class="small" style="margin-top:10px;">
+      Reglas: Rake 20% del total. MysteryPool 40% del neto. PrizePool 60% del neto. Sobres redondeados a $1.000.
+      Buy-in máx 1 por jugador. Add-on máx 1 por jugador. Add-on Plus máx 1 por jugador (solo si ya hizo Add-on). Add-on Plus = 50% del Add-on (redondeado a $1.000). Rebuy ilimitado.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Agregar jugador (late reg permitido, entra con Buy-in = 1)</label><br>
+        <input id="newName" type="text" placeholder="Nombre">
+      </div>
+      <div>
+        <label>&nbsp;</label><br>
+        <button class="btnPrimary" id="addPlayer">+ Agregar</button>
+      </div>
+      <div style="margin-left:auto">
+        <label>&nbsp;</label><br>
+        <button class="btn" id="exportCSV">Exportar CSV</button>
+      </div>
+    </div>
+
+    <div style="overflow:auto; margin-top:10px;">
+      <table>
+        <thead>
+          <tr>
+            <th class="name">Jugador</th>
+            <th>Buy-in</th>
+            <th>Rebuy</th>
+            <th>Add-on</th>
+            <th>Add-on+</th>
+            <th>Sobres</th>
+            <th>Premio Mystery (CLP)</th>
+            <th>Debe (CLP)</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="playersTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="align-items:center;">
+      <div class="pill" id="mysteryPoolPill">MysteryPool: $0</div>
+      <button class="btn" id="genEnvelopes">Generar sobres</button>
+      <button class="btn" id="shuffleEnvelopes">Mezclar</button>
+    </div>
+    <div id="envelopes" style="margin-top:12px;"></div>
+  </div>
+
+</div>
+
+<script>
+/** Presets "no castigadores" (suman 100) */
+const presets = {
+  9: [18,14,12,11,10,9,9,9,8],
+  8: [20,15,13,12,11,10,10,9],
+  7: [22,16,14,13,12,12,11],
+  6: [25,18,16,15,14,12],
+  5: [28,21,19,17,15]
+};
+
+let players = [];
+let envelopes = [];
+
+const fmt = (n)=> '$' + (n||0).toLocaleString('es-CL');
+const roundTo1000 = (n)=> Math.round(n/1000)*1000;
+
+function getConfig(){
+  const p1 = Math.max(0, Math.min(100, +document.getElementById('p1').value || 0));
+  const p2 = Math.max(0, Math.min(100, +document.getElementById('p2').value || 0));
+  const p3 = Math.max(0, 100 - p1 - p2);
+
+  // Mantener UI del 3° siempre consistente
+  const p3El = document.getElementById('p3');
+  if(p3El) p3El.value = String(p3);
+
+  const addon = +document.getElementById('addon').value || 0;
+  const addonPlus = roundTo1000(addon/2);
+  const apLbl = document.getElementById('addonPlusLabel');
+  if(apLbl) apLbl.textContent = fmt(addonPlus);
+
+  return {
+    buyIn: +document.getElementById('buyIn').value || 0,
+    rebuy: +document.getElementById('rebuy').value || 0,
+    addon: addon,
+    addonPlus: addonPlus,
+    envCount: +document.getElementById('envCount').value || 9,
+    prizePerc: {p1, p2, p3}
+  };
+}
+
+function playerTotal(p,c){
+  return p.buyIn*c.buyIn + p.rebuy*c.rebuy + p.addon*c.addon + (p.addonPlus||0)*c.addonPlus;
+}
+
+function totals(){
+  const c = getConfig();
+  const totalCollected = players.reduce((a,p)=>a+playerTotal(p,c),0);
+  const rake = Math.round(totalCollected*0.20);
+  const net = Math.max(0, totalCollected - rake);
+  const mysteryPool = Math.round(net*0.40);
+  const prizePool = Math.max(0, net - mysteryPool);
+
+  const prizes = {
+    first: Math.round(prizePool * (c.prizePerc.p1/100)),
+    second: Math.round(prizePool * (c.prizePerc.p2/100)),
+    third: prizePool - Math.round(prizePool * (c.prizePerc.p1/100)) - Math.round(prizePool * (c.prizePerc.p2/100))
+  };
+
+  return {c, totalCollected, rake, net, mysteryPool, prizePool, prizes};
+}
+
+function renderTop(){
+  const t = totals();
+  const el = document.getElementById('topTotals');
+
+  el.innerHTML = `
+    <div class="pill">Total: <b>${fmt(t.totalCollected)}</b></div>
+    <div class="pill">Rake 20%: <b>${fmt(t.rake)}</b></div>
+    <div class="pill">Neto: <b>${fmt(t.net)}</b></div>
+    <div class="pill">Mystery 40%: <b>${fmt(t.mysteryPool)}</b></div>
+    <div class="pill">Premios 60%: <b>${fmt(t.prizePool)}</b></div>
+    <div class="pill">🥇 1° (${t.c.prizePerc.p1}%): <b>${fmt(t.prizes.first)}</b></div>
+    <div class="pill">🥈 2° (${t.c.prizePerc.p2}%): <b>${fmt(t.prizes.second)}</b></div>
+    <div class="pill">🥉 3° (${t.c.prizePerc.p3}%): <b>${fmt(t.prizes.third)}</b></div>
+  `;
+
+  document.getElementById('mysteryPoolPill').innerHTML = `MysteryPool: <b>${fmt(t.mysteryPool)}</b>`;
+}
+
+function renderPlayers(){
+  const t = totals();
+  const tb = document.getElementById('playersTbody');
+  tb.innerHTML = players.map((p,i)=>{
+    const tot = playerTotal(p,t.c);
+    return `
+      <tr>
+        <td class="name"><b>${p.name}</b></td>
+        <td class="counter">${p.buyIn}</td>
+        <td class="counter">${p.rebuy}</td>
+        <td class="counter">${p.addon}</td>
+        <td class="counter">${p.addonPlus||0}</td>
+        <td>
+          <div class="row" style="gap:6px; flex-wrap:wrap; align-items:center;">
+            <select style="width:160px" id="envAvailSel_${i}">
+              <option value="">—</option>
+            </select>
+            <button class="btn btnMoney btnMini" onclick="assignEnvelope(${i})">Asignar</button>
+          </div>
+          <div class="row" style="gap:6px; flex-wrap:wrap; align-items:center; margin-top:6px;">
+            <select style="width:160px" id="envWonSel_${i}">
+              <option value="">Ganados…</option>
+            </select>
+            <button class="btn btnRemove btnMini" onclick="unassignEnvelope(${i})">Quitar</button>
+          </div>
+        </td>
+        <td><b>${fmt(p.mystery||0)}</b></td>
+        <td><b>${fmt(tot)}</b></td>
+        <td>
+          <div class="actions">
+            <button class="btn btnMoney" onclick="inc(${i},'rebuy')">+Rebuy</button>
+            <button class="btn btnRemove" onclick="dec(${i},'rebuy')">−Rebuy</button>
+
+            <button class="btn btnMoney" onclick="inc(${i},'addon')">+Add-on</button>
+            <button class="btn btnRemove" onclick="dec(${i},'addon')">−Add-on</button>
+
+            <button class="btn btnAddonPlus" onclick="inc(${i},'addonPlus')">+Add-on+</button>
+            <button class="btn btnRemove" onclick="dec(${i},'addonPlus')">−Add-on+</button>
+
+            <button class="btn btnRemove" onclick="delPlayer(${i})">Eliminar</button>
+          </div>
+          <div class="small" style="margin-top:6px;">
+            Buy-in es fijo (1). Add-on máx 1. Add-on+ máx 1 (solo si ya hizo Add-on).
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/** Incrementos con límites: Buy-in máx 1 (pero no hay botón), Add-on máx 1, Rebuy ilimitado */
+function inc(i,field){
+  const p = players[i];
+  if(field==='buyIn') p.buyIn = Math.min(1, p.buyIn + 1);
+  if(field==='rebuy') p.rebuy++;
+  if(field==='addon') p.addon = Math.min(1, p.addon + 1);
+
+  if(field==='addonPlus'){
+    // Solo si ya hizo Add-on
+    if((p.addon||0) < 1){
+      alert('Para hacer Add-on+, primero debe tener Add-on.');
+      return;
+    }
+    p.addonPlus = Math.min(1, (p.addonPlus||0) + 1);
+  }
+
+  refresh();
+}
+
+/** Decrementos con confirmación */
+function dec(i,field){
+  const p = players[i];
+
+  if(field==='rebuy'){
+    if(p.rebuy<=0) return;
+    const ok = confirm(`Quitar 1 rebuy a ${p.name}? (Quedará en ${p.rebuy-1})`);
+    if(!ok) return;
+    p.rebuy--;
+  }
+
+  if(field==='addon'){
+    if((p.addon||0)<=0) return;
+    const ok = confirm(`Quitar el add-on de ${p.name}? (Quedará en 0)`);
+    if(!ok) return;
+    p.addon = 0;
+    // Si quita el Add-on, también se cae el Add-on+
+    p.addonPlus = 0;
+  }
+
+  if(field==='addonPlus'){
+    if((p.addonPlus||0)<=0) return;
+    const ok = confirm(`Quitar Add-on+ (y también el Add-on) de ${p.name}? (Quedará en 0/0)`);
+    if(!ok) return;
+    p.addonPlus = 0;
+    p.addon = 0;
+  }
+
+  // (buyIn no se decrementa por diseño)
+  refresh();
+}
+
+function delPlayer(i){
+  const p = players[i];
+  const ok = confirm(`Eliminar a ${p.name} del torneo? Se borrarán sus pagos.`);
+  if(!ok) return;
+  players.splice(i,1);
+  refresh();
+}
+
+function refresh(){
+  renderTop();
+  renderPlayers();
+  populateEnvelopeSelects();
+  saveState(true);
+}
+/** Genera montos por sobre asegurando que sumen exactamente MysteryPool, con redondeo a $1.000 */
+function generateEnvelopes(){
+  const t = totals();
+  const perc = presets[t.c.envCount];
+  if(!perc){ alert('Preset no disponible'); return; }
+
+  let amounts = perc.map(p => roundTo1000(t.mysteryPool * (p/100)));
+
+  // Ajuste para que la suma quede exacta al MysteryPool
+  let sum = amounts.reduce((a,b)=>a+b,0);
+  let diff = t.mysteryPool - sum;
+  if(amounts.length>0) amounts[0] = Math.max(0, amounts[0] + diff);
+
+  envelopes = perc.map((p,idx)=>({
+    label: `Sobre ${idx+1}`,
+    percent: p,
+    amount: amounts[idx],
+    revealed: false
+  }));
+
+  renderEnvelopes();
+  populateEnvelopeSelects();
+}
+
+function shuffleEnvelopes(){
+  for(let i=envelopes.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [envelopes[i], envelopes[j]] = [envelopes[j], envelopes[i]];
+  }
+  renderEnvelopes();
+  populateEnvelopeSelects();
+}
+
+
+function recomputePlayerMystery(p){
+  const sum = (p.envLabels||[]).reduce((acc, lbl)=>{
+    const e = envelopes.find(x=>x.label===lbl);
+    return acc + (e ? (e.amount||0) : 0);
+  }, 0);
+  p.mystery = sum;
+}
+
+function populateEnvelopeSelects(){
+  players.forEach((p,i)=>{
+    const selAvail = document.getElementById(`envAvailSel_${i}`);
+    const selWon = document.getElementById(`envWonSel_${i}`);
+
+    if(selAvail){
+      selAvail.innerHTML = '<option value="">—</option>';
+
+      if(envelopes.length===0){
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'Genera sobres';
+        selAvail.appendChild(opt);
+      }else{
+        envelopes.forEach((e,idx)=>{
+          if(e.assignedTo) return;
+          const opt = document.createElement('option');
+          opt.value = String(idx);
+          opt.textContent = e.label + (e.revealed ? ` (${fmt(e.amount)})` : '');
+          selAvail.appendChild(opt);
+        });
+      }
+    }
+
+    if(selWon){
+      selWon.innerHTML = '<option value="">Ganados…</option>';
+      (p.envLabels||[]).forEach((lbl)=>{
+        const e = envelopes.find(x=>x.label===lbl);
+        const opt = document.createElement('option');
+        opt.value = lbl;
+        opt.textContent = lbl + (e && e.revealed ? ` (${fmt(e.amount)})` : '');
+        selWon.appendChild(opt);
+      });
+    }
+
+    recomputePlayerMystery(p);
+  });
+}
+
+function assignEnvelope(playerIndex){
+  const p = players[playerIndex];
+  const sel = document.getElementById(`envAvailSel_${playerIndex}`);
+  if(!sel) return;
+
+  if(envelopes.length===0){
+    alert('Primero genera sobres.');
+    return;
+  }
+
+  const idxStr = sel.value;
+  if(!idxStr){
+    alert("Selecciona un sobre disponible.");
+    return;
+  }
+
+  const idx = +idxStr;
+  const e = envelopes[idx];
+  if(!e){
+    alert("Sobre no válido.");
+    return;
+  }
+
+  if(e.assignedTo){
+    alert("Ese sobre ya está asignado.");
+    return;
+  }
+
+  e.assignedTo = p.name;
+  if(!Array.isArray(p.envLabels)) p.envLabels = [];
+  p.envLabels.push(e.label);
+
+  recomputePlayerMystery(p);
+
+  refresh();
+  renderEnvelopes();
+  populateEnvelopeSelects();
+}
+
+function unassignEnvelope(playerIndex){
+  const p = players[playerIndex];
+  const sel = document.getElementById(`envWonSel_${playerIndex}`);
+  if(!sel) return;
+
+  const lbl = sel.value;
+  if(!lbl){
+    alert("Selecciona un sobre ganado para quitar.");
+    return;
+  }
+
+  const ok = confirm(`Quitar ${lbl} a ${p.name}?`);
+  if(!ok) return;
+
+  const e = envelopes.find(x=>x.label===lbl);
+  if(e) e.assignedTo = "";
+
+  const arr = p.envLabels || [];
+  const k = arr.indexOf(lbl);
+  if(k>=0) arr.splice(k,1);
+  p.envLabels = arr;
+
+  recomputePlayerMystery(p);
+
+  refresh();
+  renderEnvelopes();
+  populateEnvelopeSelects();
+}
+
+function renderEnvelopes(){
+  const box = document.getElementById('envelopes');
+  if(envelopes.length===0){
+    box.innerHTML = `<div class="small">Aún no generas sobres.</div>`;
+    return;
+  }
+  box.innerHTML = envelopes.map((e,idx)=>`
+    <div class="card" style="margin:10px 0;">
+      <div class="row" style="align-items:center; justify-content:space-between;">
+        <div>
+          <b>${e.label}</b> <span class="small">(${e.percent}%)</span><br>
+          <span class="small">${e.assignedTo ? ('Asignado a: ' + e.assignedTo) : 'Sin asignar'}</span><br>
+          <span class="small">${e.revealed ? 'Monto:' : 'Monto: oculto'}</span>
+        </div>
+        <div>
+          <button class="btnPrimary" onclick="reveal(${idx})">${e.revealed ? 'Revelado' : 'Revelar'}</button>
+        </div>
+      </div>
+      ${e.revealed ? `<div style="font-size:22px; margin-top:8px;"><b>${fmt(e.amount)}</b></div>` : ``}
+    </div>
+  `).join('');
+}
+
+function reveal(i){
+  envelopes[i].revealed = true;
+  renderEnvelopes();
+  populateEnvelopeSelects();
+}
+
+function exportCSV(){
+  const t = totals();
+  const headers = ["Jugador","BuyIn","Rebuy","AddOn","AddOnPlus","SobresGanados","Mystery","Total"];
+  const rows = players.map(p=>{
+    const tot = playerTotal(p,t.c);
+    return [p.name,p.buyIn,p.rebuy,p.addon,(p.addonPlus||0),(p.envLabels||[]).join(';'),(p.mystery||0),tot];
+  });
+
+  const summary = [
+    [],
+    ["TOTAL_RECAUDADO", t.totalCollected],
+    ["RAKE_20%", t.rake],
+    ["NETO", t.net],
+    ["MYSTERY_40%NETO", t.mysteryPool],
+    ["PREMIOS_60%NETO", t.prizePool],
+    ["ADDON_PLUS_VALOR", t.c.addonPlus],
+    ["PREMIO_1_LUGAR_" + t.c.prizePerc.p1 + "%", t.prizes.first],
+    ["PREMIO_2_LUGAR_" + t.c.prizePerc.p2 + "%", t.prizes.second],
+    ["PREMIO_3_LUGAR_" + t.c.prizePerc.p3 + "%", t.prizes.third],
+    ["SOBRES", t.c.envCount]
+  ];
+
+  const csv = [
+    headers.join(","),
+    ...rows.map(r=>r.join(",")),
+    ...summary.map(r=>r.join(","))
+  ].join("\n");
+
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `highpoker_torneo_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('addPlayer').onclick = ()=>{
+  const name = (document.getElementById('newName').value || "").trim();
+  if(!name) return;
+
+  // Entra con Buy-in = 1 (late reg permitido). Buy-in máximo 1.
+  players.push({name, buyIn:1, rebuy:0, addon:0, addonPlus:0, envLabels:[], mystery:0});
+
+  document.getElementById('newName').value = "";
+  refresh();
+};
+
+document.getElementById('recalc').onclick = refresh;
+document.getElementById('p1').addEventListener('input', refresh);
+document.getElementById('p2').addEventListener('input', refresh);
+document.getElementById('genEnvelopes').onclick = generateEnvelopes;
+document.getElementById('shuffleEnvelopes').onclick = shuffleEnvelopes;
+document.getElementById('exportCSV').onclick = exportCSV;
+document.getElementById('newTournament').onclick = newTournament;
+document.getElementById('toggleTheme').onclick = toggleTheme;
+document.getElementById('saveStateBtn').onclick = ()=>saveState(false);
+
+
+function newTournament(){
+  const ok = confirm("¿Iniciar un nuevo torneo? Se borrarán jugadores y sobres.");
+  if(!ok) return;
+
+  // Reset configuración a valores actuales por defecto (puedes editarlos antes)
+  players = [];
+  envelopes = [];
+  clearSavedState();
+
+  // Limpia UI principal
+  document.getElementById('newName').value = "";
+
+  refresh();
+  renderEnvelopes();
+  populateEnvelopeSelects();
+}
+
+
+const STORAGE_KEY = "hp_torneo_state_v1";
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 1200);
+}
+
+function getAppState(){
+  return {
+    v: 1,
+    savedAt: Date.now(),
+    theme: document.body.classList.contains('light') ? 'light' : 'dark',
+    inputs: {
+      buyIn: document.getElementById('buyIn')?.value ?? "",
+      rebuy: document.getElementById('rebuy')?.value ?? "",
+      addon: document.getElementById('addon')?.value ?? "",
+      rake: document.getElementById('rake')?.value ?? "",
+      p1: document.getElementById('p1')?.value ?? "",
+      p2: document.getElementById('p2')?.value ?? "",
+      p3: document.getElementById('p3')?.value ?? ""
+    },
+    players: players || [],
+    envelopes: envelopes || []
+  };
+}
+
+function applyInputs(inputs){
+  if(!inputs) return;
+  if(document.getElementById('buyIn') && inputs.buyIn !== undefined) document.getElementById('buyIn').value = inputs.buyIn;
+  if(document.getElementById('rebuy') && inputs.rebuy !== undefined) document.getElementById('rebuy').value = inputs.rebuy;
+  if(document.getElementById('addon') && inputs.addon !== undefined) document.getElementById('addon').value = inputs.addon;
+  if(document.getElementById('rake') && inputs.rake !== undefined) document.getElementById('rake').value = inputs.rake;
+  if(document.getElementById('p1') && inputs.p1 !== undefined) document.getElementById('p1').value = inputs.p1;
+  if(document.getElementById('p2') && inputs.p2 !== undefined) document.getElementById('p2').value = inputs.p2;
+  if(document.getElementById('p3') && inputs.p3 !== undefined) document.getElementById('p3').value = inputs.p3;
+}
+
+function saveState(silent=false){
+  try{
+    const state = getAppState();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if(!silent) showToast("Guardado ✅");
+    return true;
+  }catch(e){
+    if(!silent) alert("No se pudo guardar. En Safari esto suele pasar en modo privado o si el almacenamiento está restringido.");
+    return false;
+  }
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return false;
+    const state = JSON.parse(raw);
+    if(!state || !state.v) return false;
+
+    // Theme
+    if(state.theme){
+      document.body.classList.toggle('light', state.theme === 'light');
+      const btn = document.getElementById('toggleTheme');
+      if(btn) btn.textContent = (state.theme === 'light') ? 'Modo noche' : 'Modo día';
+    }
+
+    applyInputs(state.inputs);
+
+    players = Array.isArray(state.players) ? state.players : [];
+    envelopes = Array.isArray(state.envelopes) ? state.envelopes : [];
+
+    // Back-compat fields
+    players.forEach(p=>{
+      if(p.addonPlus === undefined) p.addonPlus = 0;
+      if(p.envLabels === undefined) p.envLabels = [];
+      if(p.mystery === undefined) p.mystery = 0;
+    });
+    envelopes.forEach(e=>{
+      if(e.assignedTo === undefined) e.assignedTo = "";
+    });
+
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function clearSavedState(){
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+}
+
+function applyThemeFromStorage(){
+  const saved = localStorage.getItem('hp_theme') || 'dark';
+  document.body.classList.toggle('light', saved === 'light');
+  const btn = document.getElementById('toggleTheme');
+  if(btn) btn.textContent = (saved === 'light') ? 'Modo noche' : 'Modo día';
+}
+
+function toggleTheme(){
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('hp_theme', isLight ? 'light' : 'dark');
+  const btn = document.getElementById('toggleTheme');
+  if(btn) btn.textContent = isLight ? 'Modo noche' : 'Modo día';
+}
+
+applyThemeFromStorage();
+window.addEventListener('beforeunload', ()=>{ try{ saveState(true); }catch(e){} });
+loadState();
+refresh();
+renderEnvelopes();
+</script>
+<div class="toast" id="toast">Guardado</div>
+</body>
+</html>
